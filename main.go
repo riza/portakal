@@ -31,16 +31,16 @@ Ns+++++++++++++hy
 )
 
 var (
-	cpu, workers, jobs, count int
-	output, input, port       string
-	hideDialErr, exists       bool
-	scanner                   *bufio.Scanner
-	timeout                   = 250 * time.Millisecond
-	mutex                     sync.Mutex
-	buf                       bytes.Buffer
-	done                      chan bool
-	outputFile                *os.File
-	err                       error
+	cpu                 int
+	output, input, port string
+	hideDialErr, exists bool
+	scanner             *bufio.Scanner
+	timeout             = 250 * time.Millisecond
+	mutex               sync.Mutex
+	buf                 bytes.Buffer
+	done                chan bool
+	outputFile          *os.File
+	err                 error
 )
 
 func init() {
@@ -51,9 +51,6 @@ func init() {
 	flag.BoolVar(&hideDialErr, "errors", true, "-errors")
 	flag.StringVar(&output, "output", "", "-output=output.txt")
 	flag.StringVar(&input, "input", "", "-input=live.txt")
-	flag.IntVar(&workers, "workers", 10, "-workers=100")
-	flag.IntVar(&jobs, "jobs", 10, "-jobs=50")
-	flag.IntVar(&count, "count", 10, "-count=10")
 
 	flag.Usage = usage
 }
