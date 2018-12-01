@@ -1,7 +1,6 @@
 language: go
 sudo: false
 go:
- - tip
  - "1.10"
 
 script: go test -v -covermode=atomic -coverprofile=coverage.out
