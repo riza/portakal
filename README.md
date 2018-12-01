@@ -6,7 +6,7 @@ Bulk port checker
 
 ## TODOs
 
-- [ ] Output save
+- [x] Output save
 - [x] Check host
 - [ ] Strip big files 
 - [ ] Big files check with child process

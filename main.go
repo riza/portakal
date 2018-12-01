@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"runtime"
+	"sync"
 	"time"
 )
 
@@ -31,10 +32,15 @@ Ns+++++++++++++hy
 
 var (
 	cpu, workers, jobs, count int
-	output, input, host, port string
-	hideDialErr               bool
+	output, input, port       string
+	hideDialErr, exists       bool
 	scanner                   *bufio.Scanner
 	timeout                   = 250 * time.Millisecond
+	mutex                     sync.Mutex
+	buf                       bytes.Buffer
+	done                      chan bool
+	outputFile                *os.File
+	err                       error
 )
 
 func init() {
@@ -63,11 +69,6 @@ func usage() {
 
 func main() {
 
-	var (
-		buf  bytes.Buffer
-		done chan bool
-	)
-
 	flag.Parse()
 
 	if input == "" {
@@ -75,13 +76,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	file, err := os.Open(input)
+	outputFile, err = initOutputFile(output)
 
 	if err != nil {
 		errMsg(err, true)
 	}
 
-	tee := io.TeeReader(file, &buf)
+	inputFile, err := os.Open(input)
+
+	if err != nil {
+		errMsg(err, true)
+	}
+
+	tee := io.TeeReader(inputFile, &buf)
 	count, err := lineCounter(tee)
 
 	if err != nil {
@@ -96,24 +103,24 @@ func main() {
 	done = make(chan bool)
 
 	start := time.Now()
-	go scanAndCheck(done)
+	go scanAndCheck(done, outputFile)
 	<-done
 
 	elapsed := time.Since(start)
 	info(fmt.Sprintf("Checker took %s", elapsed), true)
 }
 
-func scanAndCheck(done chan bool) {
+func scanAndCheck(done chan bool, outputFile *os.File) {
 
 	for scanner.Scan() {
-		checkHost(scanner.Text())
+		checkHost(outputFile, scanner.Text())
 	}
 
 	done <- true
 
 }
 
-func checkHost(addr string) {
+func checkHost(outputFile *os.File, addr string) {
 
 	if port != "" {
 		addr = net.JoinHostPort(addr, port)
@@ -126,7 +133,15 @@ func checkHost(addr string) {
 	}
 
 	if ok {
+
 		live(addr, false)
+
+		err = writeLine(outputFile, addr)
+
+		if err != nil {
+			errMsg(err, true)
+		}
+
 	} else {
 		dead(addr, false)
 	}
@@ -147,4 +162,74 @@ func dial(host string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func writeLine(file *os.File, host string) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	_, err := file.WriteString(host + "\n")
+
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+func fileExists(filename string) (file *os.File, exists bool, err error) {
+	if _, err = os.Stat(output); os.IsNotExist(err) {
+		return nil, false, nil
+	} else {
+		file, err := os.OpenFile(output, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+		return file, true, err
+	}
+}
+
+func createFile(filename string) (outputFile *os.File, err error) {
+
+	file, err := os.Create(filename)
+
+	if err != nil {
+		return
+	}
+
+	defer file.Close()
+
+	outputFile, err = os.OpenFile(output, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func initOutputFile(output string) (outputFile *os.File, err error) {
+
+	outputFile, exists, err = fileExists(output)
+
+	if err != nil {
+		return
+	}
+
+	if !exists {
+
+		outputFile, err = createFile(output)
+
+		if err != nil {
+			return
+		}
+
+	} else {
+
+		outputFile, err = os.OpenFile(output, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+
+		if err != nil {
+			return
+		}
+
+	}
+
+	return
 }
