@@ -1,4 +1,4 @@
-# PORTakal - Bulk port checker
+# PORTakal
+Bulk port checker
 
-
-Readme loading :p
+[![Build Status](https://travis-ci.com/riza/portakal.svg?branch=master)](https://travis-ci.org/riza/portakal) [![Go Report Card](https://goreportcard.com/badge/github.com/riza/portakal)](https://goreportcard.com/report/github.com/riza/portakal)
