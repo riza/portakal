@@ -79,6 +79,8 @@ func main() {
 		errMsg(err, true)
 	}
 
+	defer outputFile.Close()
+
 	inputFile, err := os.Open(input)
 
 	if err != nil {
@@ -105,6 +107,7 @@ func main() {
 
 	elapsed := time.Since(start)
 	info(fmt.Sprintf("Checker took %s", elapsed), true)
+
 }
 
 func scanAndCheck(done chan bool, outputFile *os.File) {
