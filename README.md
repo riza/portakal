@@ -10,4 +10,5 @@ Bulk port checker
 - [x] Check host
 - [ ] Strip big files 
 - [ ] Big files check with child process
+- [ ] Session save - recovery
 - [ ] ...
